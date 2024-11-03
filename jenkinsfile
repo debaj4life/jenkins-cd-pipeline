@@ -1,0 +1,75 @@
+pipeline {
+    agent {label 'node-1'}
+
+parameters{
+    booleanParam(name: 'PLAN', defaultValue: false, description: 'enable to plan infrastructure')
+    booleanParam(name: 'APPLY', defaultValue: false, description: 'enable to apply infrastructure')
+    booleanParam(name: 'DESTROY', defaultValue: false, description: 'enable to destroy infrastructure')
+    booleanParam(name: 'DEPLOY', defaultValue: false, description: 'enable to deploy infrastructure')
+}
+
+
+    stages {
+        stage('clone git repository') {
+            steps {
+                echo 'cloning repository'
+                sh 'git clone git@github.com:debaj4life/cms-app-terraform.git'
+            }
+        }
+        stage('Terraform Init') {
+            when{
+            expression{params.PLAN == true}
+        }
+            steps {
+                sh """
+                cd cms-app-terraform
+                terraform init
+                """
+            }
+        }
+        stage('Terraform Apply') {
+            when{
+            expression{params.APPLY == true}
+        }
+            steps {
+                sh """
+                cd cms-app-terraform
+                terraform plan
+                terraform apply --auto-approve
+                """
+            }
+        }
+        stage('Terraform destroy') {
+            when{
+            expression{params.DESTROY == true}
+        }
+            steps {
+                sh """
+                cd cms-app-terraform
+                terraform destroy --auto-approve
+                """
+            }
+        }
+
+        stage('Deploy') {
+        when{
+            expression{params.DEPLOY == true}
+        }
+        steps {
+           sh """
+            C:\Users\debaj\OneDrive\Documents
+            cd ansible-cms-playbook
+            ansible-galaxy install -r requirement.yml --roles-path ansible-cms-role
+            ansible-playbook -i aws_ec2.yaml site.yaml -b -u ec2-user --private-key=~/.ssh/tutorial-key.pem
+            """
+        }
+}
+        
+    }
+    post{
+        cleanup{
+            cleanWs()
+        }
+    }
+}
+
