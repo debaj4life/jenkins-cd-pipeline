@@ -16,14 +16,12 @@ parameters{
                 sh 'git clone git@github.com:debaj4life/cms-app-terraform.git'
             }
         }
-        stage('Terraform Init') {
-            when{
-            expression{params.PLAN == true}
-        }
+        stage('Configure Terraform backend') {
             steps {
+
                 sh """
                 cd cms-app-terraform
-                terraform init
+                terraform init  -reconfigure -backend-config="bucket=cms-app-bck" -backend-config key="cms/dev/terraform.tfstate"
                 """
             }
         }
